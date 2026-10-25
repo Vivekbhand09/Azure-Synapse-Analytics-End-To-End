@@ -125,8 +125,6 @@ A unified analytics platform that combines **data warehousing, big-data processi
 
 > ⭐ **Golden rule:** *Facts = HASH · Dimensions = REPLICATE · Staging = ROUND_ROBIN.*
 
-📖 Full deep-dive theory: see [`docs/Azure_Synapse_Analytics_Complete_Guide.md`](docs/Azure_Synapse_Analytics_Complete_Guide.md).
-
 ---
 
 ## 🛠️ Implementation Walkthrough
@@ -142,8 +140,6 @@ A unified analytics platform that combines **data warehousing, big-data processi
 ### 2. Dedicated SQL Pool & Distributed Tables
 
 Created the pool **`vivdedicated`** at the smallest performance level **DW100c** (cheapest way to learn MPP concepts; the data is still split into 60 distributions).
-
-📄 Script: [`sql/01_distributed_tables.sql`](sql/01_distributed_tables.sql)
 
 ```sql
 -- ROUND ROBIN: fastest load, ideal for staging
@@ -220,8 +216,6 @@ MASTER KEY → DATABASE SCOPED CREDENTIAL → EXTERNAL DATA SOURCE → EXTERNAL 
                                                    └──► OPENROWSET | EXTERNAL TABLE | VIEW | CETAS
 ```
 
-📄 Script: [`sql/02_openrowset.sql`](sql/02_openrowset.sql)
-
 ```sql
 -- 1) Master key (once per database)
 CREATE MASTER KEY ENCRYPTION BY PASSWORD = '<strong-password-stored-in-key-vault>';
@@ -259,7 +253,6 @@ FROM OPENROWSET(
 ```
 
 #### 4.1 External Table: a permanent "window" over files
-📄 [`sql/03_create_external_table.sql`](sql/03_create_external_table.sql)
 ```sql
 CREATE EXTERNAL TABLE revenue_ext_table
 (
@@ -321,8 +314,6 @@ SELECT * FROM revenue_cetas;
 | Best for | Exploration | Stable schema | BI / abstraction | Persisting results |
 
 #### 4.5 🧪 Experiment: What if the folder doesn't exist?
-📄 [`sql/04_scenario_missing_location.sql`](sql/04_scenario_missing_location.sql)
-
 ```sql
 CREATE EXTERNAL TABLE revenue_2 ( ... )
 WITH ( LOCATION = 'revenue2', DATA_SOURCE = raw_ext_source1, FILE_FORMAT = csv_format );
@@ -349,7 +340,6 @@ Serverless leaves data in the lake; the **dedicated pool** needs data **inside i
 | Best for | **Fast, simple ingestion** | **ELT transformations** |
 
 #### 5.1 Method 1: `COPY INTO`
-📄 [`sql/05_copy_into.sql`](sql/05_copy_into.sql)
 ```sql
 CREATE TABLE copy_into_table
 (
@@ -373,7 +363,6 @@ SELECT * FROM copy_into_table;
 ```
 
 #### 5.2 Method 2: CTAS (PolyBase)
-📄 [`sql/06_ctas_polybase.sql`](sql/06_ctas_polybase.sql)
 ```sql
 -- Step 1: external table (metadata only) over the Parquet files
 CREATE EXTERNAL TABLE parquet_table
@@ -444,20 +433,6 @@ Spark tables are automatically visible to serverless SQL through shared metadata
 
 ---
 
-## 🩹 Challenges & Fixes
-
-| # | Challenge | Root cause | Resolution |
-|---|---|---|---|
-| 1 | `External table ... location does not exist` | External tables validate the path at query time | Create the target folder (and add files) |
-| 2 | Header row appearing as data | File format lacked a header setting | `FIRST_ROW = 2` / `HEADER_ROW = TRUE` |
-| 3 | Invalid CSV delimiter | `FIELD_TERMINATOR` was empty | Use `','` |
-| 4 | CETAS needed a Parquet format | `parquet_format` not yet created | `CREATE EXTERNAL FILE FORMAT parquet_format WITH (FORMAT_TYPE = PARQUET)` |
-| 5 | Access denied on storage | Role not assigned / still propagating | Assign **Storage Blob Data Contributor** to the workspace identity; wait a few minutes |
-| 6 | CSV columns inferred as wide strings | No explicit types in CETAS | `CAST()` columns (or a `WITH` clause) before writing Parquet |
-| 7 | Objects landing in the wrong DB | Context left on `master` | Always select the user database (`vivserverless`) first |
-
----
-
 ## ✅ Best Practices Applied
 
 - 🔐 **Passwordless auth** with managed identity; secrets belong in **Azure Key Vault**, never in source control
@@ -466,45 +441,31 @@ Spark tables are automatically visible to serverless SQL through shared metadata
 - 🗂️ **Separation of storage accounts** (system vs business data)
 - 📦 **Columnar format (Parquet)** for downstream loads
 - 🧪 **Verified behaviour** with `DBCC PDW_SHOWSPACEUSED`, `EXPLAIN`, and system views
-- 🧹 Scripts organised one-per-topic and kept idempotent where possible
+- 🧹 Scripts organised one-per-topic and version-controlled through Synapse Git integration
 
 ---
 
 ## 📁 Repository Structure
 
+This repository is the Git-integrated export of the Synapse workspace (`vivsynapsews`), so every artifact is stored as code:
+
 ```
-azure-synapse-analytics-project/
+azure-synapse-analytics-hands-on/
 ├── README.md
-├── docs/
-│   ├── Azure_Synapse_Analytics_Complete_Guide.md   ← full theory + interview Q&A
-│   └── images/                                      ← architecture & screenshots
-├── sql/
-│   ├── 01_distributed_tables.sql
-│   ├── 02_openrowset.sql
-│   ├── 03_create_external_table.sql
-│   ├── 04_scenario_missing_location.sql
-│   ├── 05_copy_into.sql
-│   └── 06_ctas_polybase.sql
-├── notebooks/
-│   └── 01_spark_revenue_transform.ipynb
-└── data/
-    └── revenue_sample.csv                           ← small sample only
+├── credential/            ← workspace credentials (Managed Identity based, no secrets)
+├── integrationRuntime/    ← integration runtime definitions
+├── linkedService/         ← linked services (workspace storage, vivdatalake)
+├── sqlscript/             ← all SQL scripts developed in Synapse Studio
+└── publish_config.json    ← Synapse publish / workspace configuration
 ```
 
----
-
-## 🔁 How to Reproduce
-
-1. Create a **resource group**, an **ADLS Gen2** storage account, and a **Synapse workspace**.
-2. In Synapse Studio → **Manage → SQL pools → New**: create a dedicated pool (**DW100c**).
-3. Run `sql/01_distributed_tables.sql` against the **dedicated** pool.
-4. Grant the workspace **managed identity** the **Storage Blob Data Contributor** role on your lake.
-5. Upload `revenue.csv` to `raw/revenue/`.
-6. Create a **serverless database** and run scripts `02` → `04` against it.
-7. Run scripts `05` and `06` against the **dedicated** pool to load data.
-8. *(Optional)* Create a Spark pool and run the notebook.
-
-> Replace placeholders (storage account names, passwords) with your own values.
+| Folder / file | What it contains |
+|---|---|
+| `credential` | Credential objects used by the workspace to authenticate to Azure resources |
+| `integrationRuntime` | Compute infrastructure used for data movement and integration |
+| `linkedService` | Connection definitions to data stores (ADLS Gen2 accounts) |
+| `sqlscript` | The SQL scripts: distributed tables, OPENROWSET, external tables, CETAS, views, COPY INTO, CTAS |
+| `publish_config.json` | Configuration used by Synapse when publishing from the collaboration branch |
 
 ---
 
@@ -521,46 +482,6 @@ azure-synapse-analytics-project/
 ```bash
 az group delete --name VIVEK_RG --yes --no-wait
 ```
-
----
-
-## 🎤 Interview Cheat Sheet
-
-<details>
-<summary><b>Click to expand</b></summary>
-
-- **What is Synapse?** A unified analytics platform: data warehousing + Spark + pipelines + Studio, evolved from Azure SQL Data Warehouse.
-- **How many distributions?** Always **60** in a dedicated pool; nodes range from **1 to 60** depending on DWU.
-- **Hash column choice?** High cardinality, even values, used in joins/group-bys, not used in `WHERE`, not updated.
-- **Fix data skew / change distribution?** Recreate with **CTAS** using a better column.
-- **Serverless writes?** Only via **CETAS**; it is read-only otherwise.
-- **COPY INTO vs PolyBase?** `COPY INTO` is the simple recommended ingest path; PolyBase + CTAS enables transformation during load.
-- **Why Parquet?** Columnar, compressed, typed. It scans less data, so it is faster and cheaper.
-- **Passwordless access?** System-assigned managed identity + RBAC role on storage.
-
-</details>
-
----
-
-## 🗺️ Roadmap
-
-- [ ] Build a **pipeline** (Synapse Integrate) to orchestrate the full load
-- [ ] Add a **star schema** with real fact/dimension data and join benchmarks
-- [ ] Convert Spark output to **Delta Lake** and query it from serverless SQL
-- [ ] Connect **Power BI** to the serverless views and the dedicated pool
-- [ ] Add **Row-Level Security** and **Dynamic Data Masking**
-- [ ] Migrate the warehouse design to **Microsoft Fabric** and compare
-
----
-
-## 👤 Author
-
-**Vivek Bhand**
-Aspiring Data Engineer · Azure · SQL · Spark
-
-[![GitHub](https://img.shields.io/badge/GitHub-181717?style=flat-square&logo=github&logoColor=white)](https://github.com/your-username)
-[![LinkedIn](https://img.shields.io/badge/LinkedIn-0A66C2?style=flat-square&logo=linkedin&logoColor=white)](https://www.linkedin.com/in/your-profile)
-[![Email](https://img.shields.io/badge/Email-D14836?style=flat-square&logo=gmail&logoColor=white)](mailto:bhandvivek974@gmail.com)
 
 ---
 
