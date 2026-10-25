@@ -105,6 +105,8 @@ A unified analytics platform that combines **data warehousing, big-data processi
 | **Azure Storage** | Holds the data; **storage and compute are decoupled** |
 | **Distributions** | A dedicated pool always splits data into **60 distributions**, the basic unit of parallelism |
 
+![Screenshot](Utils/ss1.png)
+
 ### Dedicated vs Serverless SQL pool
 
 | | **Dedicated SQL Pool** | **Serverless SQL Pool** |
@@ -114,6 +116,8 @@ A unified analytics platform that combines **data warehousing, big-data processi
 | Data location | Inside tables in the pool | Stays in the data lake |
 | Write support | Full DML | Read-only (writes only via CETAS) |
 | Best for | Enterprise reporting, high concurrency | Exploration, logical data warehouse |
+
+![Screenshot](Utils/ss2.png)
 
 ### Table distribution types (dedicated pool)
 
@@ -188,6 +192,8 @@ FROM sys.tables t
 JOIN sys.pdw_table_distribution_properties d ON t.object_id = d.object_id;
 ```
 
+![Screenshot](Utils/ss5.png)
+
 ---
 
 ### 3. Connecting the Data Lake (Managed Identity)
@@ -204,6 +210,8 @@ Synapse workspace (system-assigned identity) ──RBAC: Storage Blob Data Contr
 ```
 
 ✅ No secrets in code · ✅ Least-privilege · ✅ Auditable
+
+![Screenshot](Utils/ss3.png)
 
 ---
 
@@ -324,6 +332,8 @@ SELECT * FROM revenue_2;
 ```
 
 **Finding:** `CREATE EXTERNAL TABLE` only stores metadata, so it succeeds. The path is validated **at read time**. After creating the `revenue2/` folder (and adding files), the query works. An empty folder returns 0 rows.
+
+![Screenshot](Utils/ss6.png)
 
 ---
 
