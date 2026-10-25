@@ -1,0 +1,17 @@
+{
+	"name": "Scenario",
+	"properties": {
+		"content": {
+			"query": "CREATE EXTERNAL TABLE revenue_2\n(\n    Dealer_ID VARCHAR(4000),\n    Model_ID VARCHAR(4000),\n    Branch_ID VARCHAR(4000),\n    Date_ID VARCHAR(4000),\n    Units_Sold VARCHAR(4000),\n    Revenue VARCHAR(4000)\n)\nWITH\n(\n    LOCATION = 'revenue2',\n    DATA_SOURCE = raw_ext_source1,\n    FILE_FORMAT = csv_format\n)\n\n\nSELECT * FROM revenue_2",
+			"metadata": {
+				"language": "sql"
+			},
+			"currentConnection": {
+				"databaseName": "vivserverless",
+				"poolName": "Built-in"
+			},
+			"resultLimit": 5000
+		},
+		"type": "SqlQuery"
+	}
+}

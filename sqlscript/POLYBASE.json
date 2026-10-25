@@ -1,0 +1,17 @@
+{
+	"name": "POLYBASE",
+	"properties": {
+		"content": {
+			"query": "\n\n\nCREATE EXTERNAL TABLE parquet_table\n(\n    Dealer_ID VARCHAR(4000),\n    Model_ID VARCHAR(4000),\n    Branch_ID VARCHAR(4000),\n    Date_ID VARCHAR(4000),\n    Units_Sold VARCHAR(4000),\n    Revenue VARCHAR(4000)\n)\nWITH \n(\n    LOCATION = '/cetas_revenue',\n    DATA_SOURCE = raw_ext_source_abfss,\n    FILE_FORMAT= parquet_format\n)\n\n-- CTAS (POLYBASE)\n\nCREATE TABLE poly_table\nWITH\n(\n DISTRIBUTION= ROUND_ROBIN\n)\nAS \nSELECT * FROM parquet_table\n\n\n\nSELECT * FROM poly_table\n",
+			"metadata": {
+				"language": "sql"
+			},
+			"currentConnection": {
+				"databaseName": "vivdedicated",
+				"poolName": "vivdedicated"
+			},
+			"resultLimit": 5000
+		},
+		"type": "SqlQuery"
+	}
+}

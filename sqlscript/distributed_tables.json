@@ -1,0 +1,17 @@
+{
+	"name": "distributed_tables",
+	"properties": {
+		"content": {
+			"query": "-----------------------\n----ROUND ROBIN TBALE\n-----------------------\n\nCREATE TABLE round_table\n(\n    id INT,\n    name VARCHAR(4000),\n    salary INT\n)\nWITH \n(\n    DISTRIBUTION= ROUND_ROBIN\n)\n\n\nINSERT INTO round_table\nVALUES\n(1,'viv',1000000000)\n\nSELECT * FROM round_table;\n\n\n\n-----------------------\n----REPLACE TBALE\n-----------------------\n\nCREATE SCHEMA gold;\n\nCREATE TABLE gold.dim_product\n(\n    dim_key_prod INT,\n    prod_id INT,\n    prod_name VARCHAR(4000)\n)\nWITH\n(\n    DISTRIBUTION = REPLICATE\n)\n\n\n-----------------------\n----HASH TABLE\n-----------------------\n\nCREATE TABLE gold.fact_table\n(\n    dim_key_prod INT,\n    revenue INT,\n    cost INT\n)\nWITH \n(\n    DISTRIBUTION = HASH(dim_key_prod)\n)",
+			"metadata": {
+				"language": "sql"
+			},
+			"currentConnection": {
+				"databaseName": "vivdedicated",
+				"poolName": "vivdedicated"
+			},
+			"resultLimit": 5000
+		},
+		"type": "SqlQuery"
+	}
+}

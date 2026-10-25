@@ -1,0 +1,17 @@
+{
+	"name": "Create_Ext_Tables",
+	"properties": {
+		"content": {
+			"query": "\n--------------------------\n-- CREATE EXTERNAL TABLE\n--------------------------\n\nCREATE EXTERNAL TABLE revenue_ext_table\n(\n    Dealer_ID VARCHAR(4000),\n    Model_ID VARCHAR(4000),\n    Branch_ID VARCHAR(4000),\n    Date_ID VARCHAR(4000),\n    Units_Sold VARCHAR(4000),\n    Revenue VARCHAR(4000)\n)\nWITH \n(\n    LOCATION = 'revenue',\n    DATA_SOURCE = raw_ext_source1,\n    FILE_FORMAT = csv_format\n)\n\n\nSELECT * FROM revenue_ext_table;",
+			"metadata": {
+				"language": "sql"
+			},
+			"currentConnection": {
+				"databaseName": "vivserverless",
+				"poolName": "Built-in"
+			},
+			"resultLimit": 5000
+		},
+		"type": "SqlQuery"
+	}
+}
